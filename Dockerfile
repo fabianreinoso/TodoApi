@@ -1,21 +1,25 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build 
+# Stage 1: Build the application
+FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /webapi
-
 EXPOSE 80
 EXPOSE 7100
 
-#COPY 
-
-COPY ./*.csproj ./
+# Copy the project file and restore the dependencies
+COPY *.csproj ./
 RUN dotnet restore
 
-#COPY todo
+# Copy the rest of the application code and build
+COPY . ./
+RUN dotnet publish -c Release -o out
 
-COPY . . 
-RUN dotnet publish -c Release -o out 
-
-#BUILD 
-FROM mcr.microsoft.com/dotnet/sdk:8.0
+# Stage 2: Create the final image
+FROM mcr.microsoft.com/dotnet/aspnet:7.0
 WORKDIR /webapi
+EXPOSE 80
+EXPOSE 7100
+
+# Copy the published application to the final image
 COPY --from=build /webapi/out .
-ENTRYPOINT [ "dotnet" , "TodoApi.dll"]
+
+# Set the entry point to start the application
+ENTRYPOINT ["dotnet", "TodoApi.dll"]
